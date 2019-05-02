@@ -1,0 +1,9 @@
+{
+    "errors": [
+        {
+            "code": 500,
+            "message": "何かしらのエラーが発生しました。",
+            "context": null
+        }
+    ]
+}

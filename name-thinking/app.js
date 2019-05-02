@@ -1,5 +1,5 @@
 const axios = require('axios')
-const codic = axios.create({
+exports.codic = axios.create({
     baseURL: 'https://api.codic.jp',
     headers: {
         'Authorization': `Bearer ${process.env.CODIC_TOKEN}`
@@ -27,14 +27,15 @@ exports.lambdaHandler = async (event, context) => {
         return {
             statusCode: 200,
             body: JSON.stringify({
-                text: body.word,
+                original_text: body.word,
                 translated_text: result.translated_text,
                 words: process
             })
         }
     } catch (err) {
-        console.log(err)
-        return err
+        const e = err.response
+        console.log(e)
+        return e
     }
 }
 
@@ -44,7 +45,7 @@ exports.postCodic = async function (word) {
             text: word,
             casing: 'lower underscore'
         }
-        const result = await codic.post('/v1/engine/translate.json', reqBody)
+        const result = await exports.codic.post('/v1/engine/translate.json', reqBody)
         return result.data.shift()
     } catch (e) {
         throw e
@@ -54,11 +55,13 @@ exports.postCodic = async function (word) {
 exports.processResults = function (results) {
     return results.map(result => {
         const candidates = result.successful
+            // successful = true は Codic 側で翻訳が出来た場合。整形して、カンマ区切りで返せるようにする
             ? result.candidates
                 .filter(x => x.text !== null)
                 .map(x => x.text)
                 .toString()
                 .replace(/\,/g, ', ')
+            // successful = false は Codic 側で翻訳が出来なかった場合
             : '(no translated text)'
         return {
             text: result.text,

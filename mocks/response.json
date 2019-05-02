@@ -1,0 +1,70 @@
+{
+    "successful": true,
+    "original_text": "ユーザーを取得する",
+    "translated_text": "get_user",
+    "words": [
+        {
+            "successful": true,
+            "text": "取得する",
+            "translated_text": "get",
+            "candidates": [
+                {
+                    "text": "get"
+                },
+                {
+                    "text": "retrieve"
+                },
+                {
+                    "text": "fetch"
+                },
+                {
+                    "text": "obtain"
+                },
+                {
+                    "text": "acquire"
+                },
+                {
+                    "text": "getting"
+                }
+            ]
+        },
+        {
+            "successful": true,
+            "text": "ユーザー",
+            "translated_text": "user",
+            "candidates": [
+                {
+                    "text": "user"
+                }
+            ]
+        },
+        {
+            "successful": true,
+            "text": "を",
+            "translated_text": null,
+            "candidates": [
+                {
+                    "text": null
+                },
+                {
+                    "text": "that"
+                },
+                {
+                    "text": "to"
+                },
+                {
+                    "text": "for"
+                },
+                {
+                    "text": "from"
+                },
+                {
+                    "text": "is"
+                },
+                {
+                    "text": "of"
+                }
+            ]
+        }
+    ]
+}
