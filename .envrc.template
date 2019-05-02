@@ -1,0 +1,4 @@
+export CODIC_TOKEN={YOUR CODIC API TOKEN}
+export S3_BUCKET={YOUR S3 BUCKET}
+export STACK_NAME={YOUR CFN STACK NAME}
+export STAGE_ENV={local, dev, stg, prod etc...}
