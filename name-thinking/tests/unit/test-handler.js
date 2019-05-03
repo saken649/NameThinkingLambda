@@ -41,6 +41,9 @@ describe('Name Thinking Unit Test', () => [
         // リクエストボディと original_text が一致すること
         const reqBody = JSON.parse(event.body)
         assert.equal(resBody.original_text, reqBody.word)
+
+        // candidates: no translated でなく、", " 区切りで単語を区切れているか
+        assert.equal(resBody.words[0].candidates, "get, retrieve, fetch, obtain, acquire, getting")
     }),
 
     it ('#2: 異常系: 適切に throw がされているか', async () => {
