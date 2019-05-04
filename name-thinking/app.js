@@ -15,6 +15,9 @@ exports.slack = axios.create()
  *
  * Context doc: https://docs.aws.amazon.com/lambda/latest/dg/nodejs-prog-model-context.html 
  * @param {Object} context
+ * 
+ * Callback: Return response to callee
+ * @param {Object} callback
  *
  * Return doc: https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-lambda-proxy-integrations.html
  * @returns {Object} object - API Gateway Lambda Proxy Output Format
@@ -22,7 +25,7 @@ exports.slack = axios.create()
  */
 exports.lambdaHandler = async (event, context, callback) => {
     try {
-        const [ body, isSlack ] = getBodyAndIsSlack(event)
+        var [ body, isSlack ] = getBodyAndIsSlack(event)
 
         // Slack からの場合は、Slack API タイムアウト対策のため、まずレスポンス返しておく
         if (isSlack) {
@@ -38,7 +41,9 @@ exports.lambdaHandler = async (event, context, callback) => {
 
         if (isSlack) {
             const reqBodyForSlack = exports.processReqBodyForSlack(candidates, body, resultCodic)
-            await exports.postSlack(reqBodyForSlack, body.response_url)
+            const res = await exports.postSlack(reqBodyForSlack, body.response_url)
+            console.log('slacked')
+            console.log(res.data)
         } else {
             // Slack からでないので、普通の RESTful API として扱う
             return {
@@ -64,11 +69,21 @@ exports.lambdaHandler = async (event, context, callback) => {
     }
 }
 
+/**
+ * RequestBody のオブジェクトと、Slack からの呼び出しであるか、を取得する
+ * @param {Object} event 
+ */
 function getBodyAndIsSlack(event) {
-    const body = querystring.parse(event.body)
-
     const _q = event.queryStringParameters
     const fromSlack = _q !== null && 'from_slack' in _q ? _q.from_slack : false
+
+    // Slack の場合、クエリ文字列。RESTful API の場合、JSON。
+    let body
+    if (fromSlack) {
+        body = querystring.parse(event.body)
+    } else {
+        body = JSON.parse(event.body)
+    }
     const isSlack = fromSlack && 'response_url' in body ? true : false
 
     const log = isSlack ? 'Slack API Mode.' : 'RESTful API Mode.'
@@ -77,6 +92,10 @@ function getBodyAndIsSlack(event) {
     return [body, isSlack]
 }
 
+/**
+ * Codic API へ翻訳するワードを投げる
+ * @param {String} text
+ */
 exports.postCodic = async function (text) {
     try {
         const reqBody = {
@@ -90,6 +109,10 @@ exports.postCodic = async function (text) {
     }
 }
 
+/**
+ * Codic からのレスポンスを、Slack への投稿用に整形する
+ * @param {Object} results
+ */
 exports.processResults = function (results) {
     return results.map(result => {
         const candidates = result.successful
@@ -116,6 +139,12 @@ exports.processResults = function (results) {
     })
 }
 
+/**
+ * Slack への POST 用に RequestBody を生成する
+ * @param {Object} processed 整形済みの Codic API レスポンス
+ * @param {Object} reqBody Slack から飛んできた元の RequestBody
+ * @param {Object} resultCodic Codic API からの未整形レスポンス
+ */
 exports.processReqBodyForSlack = function (processed, reqBody, resultCodic) {
     return {
         response_type: 'in_channel',
@@ -142,6 +171,11 @@ exports.processReqBodyForSlack = function (processed, reqBody, resultCodic) {
     }
 }
 
+/**
+ * Slack への POST
+ * @param {Object} body RequestBody
+ * @param {String} url Slack の レスポンス用 URL
+ */
 exports.postSlack = async function (body, url) {
     return await exports.slack.post(url, body)
 }
