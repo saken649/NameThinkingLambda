@@ -1,4 +1,5 @@
 const axios = require('axios')
+const querystring = require('querystring')
 exports.codic = axios.create({
     baseURL: 'https://api.codic.jp',
     headers: {
@@ -64,7 +65,7 @@ exports.lambdaHandler = async (event, context, callback) => {
 }
 
 function getBodyAndIsSlack(event) {
-    const body = JSON.parse(event.body)
+    const body = querystring.parse(event.body)
 
     const _q = event.queryStringParameters
     const fromSlack = _q !== null && 'from_slack' in _q ? _q.from_slack : false
