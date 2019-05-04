@@ -136,3 +136,6 @@ env.json
 
 # SAM CLI packaged YAML
 package.yaml
+
+# .aws
+.aws

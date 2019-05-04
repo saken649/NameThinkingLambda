@@ -6,6 +6,7 @@ if [ -z "${CODIC_TOKEN}" ]; then
 fi
 
 sam local start-api \
+    --debug-port 5858 \
     --env-vars env.json \
     --parameter-overrides \
         ParameterKey=StageEnv,ParameterValue=local \
