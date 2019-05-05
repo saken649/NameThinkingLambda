@@ -1,206 +1,189 @@
-# lambda-test-api
+# NameThinking Lambda Version
 
-This is a sample template for lambda-test-api - Below is a brief explanation of what we have generated for you:
+https://github.com/saken649/NameThinking の AWS Lambda 版です。  
+2019 年 5 月時点で、概ね同等の機能を有しています。 (ケース選択機能は未実装)  
+追加機能として、クエリパラメータで Slack へ投稿せずレスポンスとして返す機能があります。
 
-```bash
-.
-├── README.MD                   <-- This instructions file
-├── event.json                  <-- API Gateway Proxy Integration event payload
-├── hello_world                 <-- Source code for a lambda function
-│   └── app.js                  <-- Lambda function code
-│   └── package.json            <-- NodeJS dependencies and scripts
-│   └── tests                   <-- Unit tests
-│       └── unit
-│           └── test-handler.js
-├── template.yaml               <-- SAM template
+## NameThinking とは
+
+※ https://github.com/saken649/NameThinking の README を参照。
+
+- 変数名やメソッド名の命名に困った際に、[Codic](https://codic.jp/) の API を用いて、その候補を提示するアプリ。
+- Slack の Slash コマンドから実行することを前提としています。
+- 元々は Cloud Functions for Firebase で動かすことを前提に実装していました。
+
+![command](https://user-images.githubusercontent.com/13757996/53863960-b7553a00-402e-11e9-9374-0c319376c479.png)
+
+↓↓↓
+
+![result](https://user-images.githubusercontent.com/13757996/53863980-c4722900-402e-11e9-8459-6b2cafdb30ff.png)
+
+## NameThinking API
+
+RESTful API モードを搭載。  
+
+### Endpoint
+
+(POST) `/name_thinking`
+
+※ query として `?from_slack=true` を渡すと、Slack モードになります。
+
+### RequestBody
+
+```json
+{
+    "text": "ユーザーを取得する"
+}
 ```
+
+### ResponseBody
+
+```json
+{
+    "original_text": "ユーザーを取得する",
+    "translated_text": "get_user",
+    "candidates": [
+        {
+            "text": "取得する",
+            "translated_text": "get",
+            "candidates": "*get* , retrieve, fetch, obtain, acquire, getting"
+        },
+        {
+            "text": "ユーザー",
+            "translated_text": "user",
+            "candidates": "*user*"
+        },
+        {
+            "text": "を",
+            "translated_text": null,
+            "candidates": "that, to, for, from, is, of"
+        }
+    ]
+}
+```
+
+## Lambda 版での違い
+
+元の NameThinking との違いは以下の通りです。
+
+- ケース選択 (camelCase か、UpperCase か、kebab-case か etc...) が未実装。
+    - lower_snake_case で固定になっています。
+- RESTful API モードを追加実装。
 
 ## Requirements
 
-* AWS CLI already configured with Administrator permission
-* [NodeJS 8.10+ installed](https://nodejs.org/en/download/)
-* [Docker installed](https://www.docker.com/community-edition)
+- AWS CLI が設定済みであること
+- [Node.js 8.10+](https://nodejs.org/ja/)
+- [Docker](https://www.docker.com/community-edition)
+- [direnv](https://github.com/direnv/direnv) (optional)
+    - あると便利。
 
-## Setup process
+## Setup
 
-### Local development
-
-**Invoking function locally using a local sample payload**
+### npm packages
 
 ```bash
-sam local invoke HelloWorldFunction --event event.json
+$ cd name-thinking
+$ npm install
 ```
+
+### AWS S3
+
+デプロイ時に必要となるため、予め作成。
+
+```bash
+$ aws s3 mb s3://{YOUR S3 BUCKET}
+```
+
+### Env
+
+`.envrc.template` と `env.json.template` に、予め必要な値を設定した上で実行してください。
+
+```bash
+$ cat .envrc.template > .envrc
+$ direnv allow .
+$ cat env.json.template > env.json
+```
+
+direnv を使用しない場合、 `.envrc.template` に記載の 4 つの環境変数を、予めセットしておいてください。  
+その場合でも、 `env.json` のセットアップは忘れずに実施してください。
+
+### Local environment
  
-**Invoking function locally through local API Gateway**
+**ローカル実行環境の起動**
 
 ```bash
-sam local start-api
+$ sh start_local_api.sh
 ```
 
-If the previous command ran successfully you should now be able to hit the following local endpoint to invoke your function `http://localhost:3000/hello`
-
-**SAM CLI** is used to emulate both Lambda and API Gateway locally and uses our `template.yaml` to understand how to bootstrap this environment (runtime, where the source code is, etc.) - The following excerpt is what the CLI will read in order to initialize an API and its routes:
-
-```yaml
-...
-Events:
-    HelloWorld:
-        Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
-        Properties:
-            Path: /hello
-            Method: get
-```
-
-## Packaging and deployment
-
-AWS Lambda NodeJS runtime requires a flat folder with all dependencies including the application. SAM will use `CodeUri` property to know where to look up for both application and dependencies:
-
-```yaml
-...
-    HelloWorldFunction:
-        Type: AWS::Serverless::Function
-        Properties:
-            CodeUri: hello-world/
-            ...
-```
-
-Firstly, we need a `S3 bucket` where we can upload our Lambda functions packaged as ZIP before we deploy anything - If you don't have a S3 bucket to store code artifacts then this is a good time to create one:
+**デバッガーを有効化して実行したい場合**
 
 ```bash
-aws s3 mb s3://BUCKET_NAME
+$ sh start_local_api.sh -d
 ```
 
-Next, run the following command to package our Lambda function to S3:
+実行後は `http://localhost:3000/name_thinking` で実行可。  
+Slack モードをローカルで動かす場合は、 `http://localhost:3000/name_thinking?from_slack=true` で実行してください。
+
+#### 制約
+
+- ローカルで Slack モードを実行した場合、Slack API は必ずタイムアウトします。
+    - SAM CLI のローカルエミュレーターの起動が遅いため、起動中にタイムアウト時間が経過してしまいます。
+    - ただし、[response_url](https://api.slack.com/slash-commands#responding_response_url) に対して POST を行う仕様のため、タイムアウト後でも、POST 自体は行なえます。
+
+## ユニットテスト
+
+[mocha](https://mochajs.org/) によるユニットテストを実装しています。
 
 ```bash
-sam package \
-    --output-template-file packaged.yaml \
-    --s3-bucket REPLACE_THIS_WITH_YOUR_S3_BUCKET_NAME
+$ cd name-thinking
+$ npm run test
 ```
 
-Next, the following command will create a Cloudformation Stack and deploy your SAM resources.
+**デバッガーを有効化しながらユニットテストを行う場合**
 
 ```bash
-sam deploy \
-    --template-file packaged.yaml \
-    --stack-name lambda-test-api \
-    --capabilities CAPABILITY_IAM
+$ npm run test-d
 ```
 
-> **See [Serverless Application Model (SAM) HOWTO Guide](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-quick-start.html) for more details in how to get started.**
+## デプロイ
 
-After deployment is complete you can run the following command to retrieve the API Gateway Endpoint URL:
+SAM CLI (CloudFormation) による自動デプロイを行えます。  
+`.envrc.template` 記載の 4 つの環境変数に依存します。
+
+- `$CODIC_TOKEN`
+    - Codic の API トークンを指定します。
+    - 予め、Codic のアカウントを取得し、トークンを取得してください。
+- `$S3_BUCKET`
+    - デプロイする資材を置くためのバケット名。
+- `$STAGE_ENV`
+    - dev, stg, prod といったステージ別のデプロイを行うことが出来ます。
+    - また、URL にも反映されます。
+    - e.g. `/dev/name_thinking`
+- `$STACK_NAME`
+    - CloudFormation の Stack 名。
+    - 実際反映される Stack 名は、`$STAGE_ENV` を接頭辞 (ハイフン繋ぎ) にした名前となります。
+    - e.g. `dev-name_thinking`
+
+Lambda 関数だけでなく、API Gateway, IAM Role といった関連するサービスの設定も行われます。
+
+### デプロイ用コマンド
 
 ```bash
-aws cloudformation describe-stacks \
-    --stack-name lambda-test-api \
-    --query 'Stacks[].Outputs[?OutputKey==`HelloWorldApi`]' \
-    --output table
-``` 
-
-## Fetch, tail, and filter Lambda function logs
-
-To simplify troubleshooting, SAM CLI has a command called sam logs. sam logs lets you fetch logs generated by your Lambda function from the command line. In addition to printing the logs on the terminal, this command has several nifty features to help you quickly find the bug.
-
-`NOTE`: This command works for all AWS Lambda functions; not just the ones you deploy using SAM.
-
-```bash
-sam logs -n HelloWorldFunction --stack-name lambda-test-api --tail
+$ sh deploy.sh
 ```
 
-You can find more information and examples about filtering Lambda function logs in the [SAM CLI Documentation](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-logging.html).
+### アプリケーション削除
 
-## Testing
-
-We use `mocha` for testing our code and it is already added in `package.json` under `scripts`, so that we can simply run the following command to run our tests:
+CloudFormation のコマンドで削除可能です。
 
 ```bash
-cd hello-world
-npm install
-npm run test
+aws cloudformation delete-stack --stack-name {YOUR CFN STACK NAME}
 ```
 
-## Cleanup
+## Slack との連携
 
-In order to delete our Serverless Application recently deployed you can use the following AWS CLI Command:
+Slack Bot User を作成の上、Slash Commands を設定してください。  
+`Request URL` の設定時には、URLの末尾を `?from_slack=true` として、Slack モードにするのを忘れないでください。
 
-```bash
-aws cloudformation delete-stack --stack-name lambda-test-api
-```
-
-## Bringing to the next level
-
-Here are a few things you can try to get more acquainted with building serverless applications using SAM:
-
-### Learn how SAM Build can help you with dependencies
-
-* Uncomment lines on `app.js`
-* Build the project with ``sam build --use-container``
-* Invoke with ``sam local invoke HelloWorldFunction --event event.json``
-* Update tests
-
-### Create an additional API resource
-
-* Create a catch all resource (e.g. /hello/{proxy+}) and return the name requested through this new path
-* Update tests
-
-### Step-through debugging
-
-* **[Enable step-through debugging docs for supported runtimes]((https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-using-debugging.html))**
-
-Next, you can use AWS Serverless Application Repository to deploy ready to use Apps that go beyond hello world samples and learn how authors developed their applications: [AWS Serverless Application Repository main page](https://aws.amazon.com/serverless/serverlessrepo/)
-
-# Appendix
-
-## Building the project
-
-[AWS Lambda requires a flat folder](https://docs.aws.amazon.com/lambda/latest/dg/nodejs-create-deployment-pkg.html) with the application as well as its dependencies in a node_modules folder. When you make changes to your source code or dependency manifest,
-run the following command to build your project local testing and deployment:
-
-```bash
-sam build
-```
-
-If your dependencies contain native modules that need to be compiled specifically for the operating system running on AWS Lambda, use this command to build inside a Lambda-like Docker container instead:
-```bash
-sam build --use-container
-```
-
-By default, this command writes built artifacts to `.aws-sam/build` folder.
-
-## SAM and AWS CLI commands
-
-All commands used throughout this document
-
-```bash
-# Invoke function locally with event.json as an input
-sam local invoke HelloWorldFunction --event event.json
-
-# Run API Gateway locally
-sam local start-api
-
-# Create S3 bucket
-aws s3 mb s3://BUCKET_NAME
-
-# Package Lambda function defined locally and upload to S3 as an artifact
-sam package \
-    --output-template-file packaged.yaml \
-    --s3-bucket REPLACE_THIS_WITH_YOUR_S3_BUCKET_NAME
-
-# Deploy SAM template as a CloudFormation stack
-sam deploy \
-    --template-file packaged.yaml \
-    --stack-name lambda-test-api \
-    --capabilities CAPABILITY_IAM
-
-# Describe Output section of CloudFormation stack previously created
-aws cloudformation describe-stacks \
-    --stack-name lambda-test-api \
-    --query 'Stacks[].Outputs[?OutputKey==`HelloWorldApi`]' \
-    --output table
-
-# Tail Lambda function Logs using Logical name defined in SAM Template
-sam logs -n HelloWorldFunction --stack-name lambda-test-api --tail
-```
-
-**NOTE**: Alternatively this could be part of package.json scripts section.
+**Let's NameThinking!**
