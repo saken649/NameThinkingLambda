@@ -17,6 +17,12 @@ if [ -z "${STAGE_ENV}" ]; then
     exit 1
 fi
 
+echo -e ">>> Stage is ${STAGE_ENV}\n"
+read -p "デプロイを実行しますか？ (y/N): " yn
+case "$yn" in [yY]*) ;; *) echo -e "abort.\n" ; exit ;; esac
+
+echo -e ""
+
 sam package \
     --template-file template.yaml \
     --s3-bucket ${S3_BUCKET} \
