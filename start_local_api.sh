@@ -16,14 +16,12 @@ done
 if [ ${IS_DEBUG} = true ]; then
     echo -e ">>> Debug mode is enabled."
     sam local start-api \
-    --debug-port 5858 \
-    --env-vars env.json \
-    --parameter-overrides \
-        ParameterKey=StageEnv,ParameterValue=local \
-        && ParameterKey=CodicToken,ParameterValue=${CODIC_TOKEN}
+        --debug-port 5858 \
+        --parameter-overrides \
+            ParameterKey=StageEnv,ParameterValue=local \
+            && ParameterKey=CodicToken,ParameterValue=${CODIC_TOKEN}
 else
     sam local start-api \
-        --env-vars env.json \
         --parameter-overrides \
             ParameterKey=StageEnv,ParameterValue=local \
             && ParameterKey=CodicToken,ParameterValue=${CODIC_TOKEN}
