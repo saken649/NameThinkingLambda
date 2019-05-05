@@ -31,7 +31,7 @@ exports.lambdaHandler = async (event, context, callback) => {
         if (isSlack) {
             callback(null, {
                 statusCode: 200,
-                body: JSON.stringify({ text: 'NameThinking App is processing now...' })
+                body: ''
             })
         }
 

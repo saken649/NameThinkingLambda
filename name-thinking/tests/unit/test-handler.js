@@ -85,7 +85,6 @@ describe('Name Thinking Unit Test', () => [
         const resBody = JSON.parse(result.body)
 
         const callbackResult = Clb.getResult()
-        const callbackBody = JSON.parse(callbackResult.body)
 
         /*** assert ***/
 
@@ -95,8 +94,8 @@ describe('Name Thinking Unit Test', () => [
         // Response ステータスも 200 であること
         assert.equal(result.statusCode, 200)
 
-        // callback の text がタイムアウト対策の文言であること
-        assert.equal(callbackBody.text, 'NameThinking App is processing now...')
+        // callback の body が空 = タイムアウト対策用のレスポンスであること
+        assert.equal(callbackResult.body, '')
 
         // Codic と Slack の API が 1 回づつ呼ばれていること
         assert.equal(1, spyCodic.callCount)
