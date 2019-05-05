@@ -1,5 +1,5 @@
 {
-  "body": "{\n\t\"word\": \"ユーザーを取得する\"\n}",
+  "body": "{\n\t\"text\": \"ユーザーを取得する\"\n}",
   "resource": "/{proxy+}",
   "path": "/path/to/resource",
   "httpMethod": "POST",
