@@ -81,17 +81,22 @@ describe('Name Thinking Unit Test', () => [
             Clb.setResult(result)
         }
         // Slack 用イベントで呼び出し
-        await app.lambdaHandler(stubSlackEvent, null, clb)
-        const result = Clb.getResult()
+        const result = await app.lambdaHandler(stubSlackEvent, null, clb)
         const resBody = JSON.parse(result.body)
+
+        const callbackResult = Clb.getResult()
+        const callbackBody = JSON.parse(callbackResult.body)
 
         /*** assert ***/
 
-        // ステータスが 200 であること
+        // callback ステータスが 200 であること
+        assert.equal(callbackResult.statusCode, 200)
+
+        // Response ステータスも 200 であること
         assert.equal(result.statusCode, 200)
 
-        // text がタイムアウト対策の文言であること
-        assert.equal(resBody.text, 'NameThinking App is processing now...')
+        // callback の text がタイムアウト対策の文言であること
+        assert.equal(callbackBody.text, 'NameThinking App is processing now...')
 
         // Codic と Slack の API が 1 回づつ呼ばれていること
         assert.equal(1, spyCodic.callCount)
@@ -127,16 +132,4 @@ describe('Name Thinking Unit Test', () => [
         assert.equal(1, spyCodic.callCount)
         assert.equal(0, spySlack.callCount)
     })
-
-    // it ('#2: 異常系: 適切に throw がされているか', async () => {
-    //     // エラーレスポンスが返ってきたのを想定
-    //     mockCodic.onPost('/v1/engine/translate.json').reply(500, [mockErrorResponse])
-
-    //     const result = await app.lambdaHandler(event, null)
-    //     const resBody = result.data[0].errors[0]
-        
-    //     /*** assert ***/
-    //     assert.equal(result.status, 500)
-    //     assert.equal(resBody.code, 500)
-    // })
 ])

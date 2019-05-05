@@ -42,18 +42,17 @@ exports.lambdaHandler = async (event, context, callback) => {
         if (isSlack) {
             const reqBodyForSlack = exports.processReqBodyForSlack(candidates, body, resultCodic)
             const res = await exports.postSlack(reqBodyForSlack, body.response_url)
-            console.log('slacked')
-            console.log(res.data)
-        } else {
-            // Slack からでないので、普通の RESTful API として扱う
-            return {
-                statusCode: 200,
-                body: JSON.stringify({
-                    original_text: body.text,
-                    translated_text: resultCodic.translated_text,
-                    candidates: candidates
-                })
+            if (res.status !== 200) {
+                throw new Error(res.data)
             }
+        }
+        return {
+            statusCode: 200,
+            body: JSON.stringify({
+                original_text: body.text,
+                translated_text: resultCodic.translated_text,
+                candidates: candidates
+            })
         }
     } catch (err) {
         const e = err.response !== undefined ? err.undefined : err
