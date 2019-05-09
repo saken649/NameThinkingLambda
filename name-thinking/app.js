@@ -30,7 +30,7 @@ exports.lambdaHandler = async (event, context, callback) => {
         // Slack からの場合は、Slack API タイムアウト対策のため、まずレスポンス返しておく
         if (isSlack) {
             callback(null, {
-                statusCode: 200,
+                statusCode: 202,
                 body: ''
             })
         }
